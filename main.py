@@ -128,9 +128,9 @@ def print_out(lst, bazaar_json):
             print(f"{key : <30}{'->' : ^5}{value : <10,.2f}")
             ench_total += value
     
-    print(f"\n{'Enchants Sum: ' : <15}{':' : ^5}{ench_total : <10,.2f}")
-    print(f"{'Hot Potato Sum: ' : <15}{':' : ^5}{hot_potato_sum : <10,.2f}")
-    print(f"\n{'Total: ' : <15}{':' : ^5}{ench_total + hot_potato_sum: <10,.2f}")
+    print(f"\n{'Enchants Sum: ' : <20}{':' : ^5}{ench_total : <10,.2f}")
+    print(f"{'Hot Potato Sum: ' : <20}{':' : ^5}{hot_potato_sum : <10,.2f}")
+    print(f"\n{'Total: ' : <20}{':' : ^5}{ench_total + hot_potato_sum: <10,.2f}")
 
 
     return 0
