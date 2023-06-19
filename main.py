@@ -57,9 +57,9 @@ def retrieve_item(index):
 
     item_ench_data = native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
     item_potato_count = native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
-    item_name = native_python_object["i"][index]["tag"]["ExtraAttributes"]["display"]["Name"]
+    item_name = native_python_object["i"][index]["tag"]["display"]["Name"]
 
-    return item_ench_data, item_potato_count, item_name
+    return [item_ench_data, item_potato_count, item_name]
 
 def convert_to_query(item_data):
     """
@@ -82,17 +82,29 @@ def get_enchant_prices(hypixel_json, data_to_bazaar):
         ench_prices[ench] = price_per_unit
     return ench_prices
 
+def print_out(lst, bazaar_json):
+    """
+    Print out the cost sum of the item nicely.
+    """
+    name = lst[2]
+    potato_count = lst[1]
+    ench_data = lst[0]
+
+    data_to_bazaar = convert_to_query(ench_data)
+
+    total = 0
+    print("Name: ", name)
+    for key, value in get_enchant_prices(bazaar_json, data_to_bazaar).items():
+        print(key, "->", "{:,.2f}".format(value))
+        total += value
+    print("Sum: {:,.2f}".format(total))
+
+    return 0
 
 requestlink = str("https://api.hypixel.net/skyblock/bazaar")
-hypixel_json = requests.get(requestlink).json()
+bazaar_json = requests.get(requestlink).json()
 
 index = 1
-ench_data, hot_potato, Name = retrieve_item(index)
-data_to_bazaar = convert_to_query(ench_data)
+item_data = retrieve_item(index)
 
-total = 0
-for key, value in get_enchant_prices(hypixel_json, data_to_bazaar).items():
-    print(key, "->", "{:,.2f}".format(value))
-    total += value
-
-print("Sum: {:,.2f}".format(total))
+print_out(item_data, bazaar_json)
