@@ -86,6 +86,7 @@ def convert_to_query(item_data):
     Convert json format into list of enchantments for bazaar query
     """
     enchants = []
+    print(item_data.items())
     for key, value in item_data.items():
         if key != "telekinesis":
             string = "ENCHANTMENT_" + key.upper() + "_" + str(value)
@@ -98,8 +99,8 @@ def get_enchant_prices(bazaar_json, data_to_bazaar):
     """
     ench_prices = {}
     for ench in data_to_bazaar:
-        if len(bazaar_json["products"][ench]["sell_summary"]) != 0:
-            price_per_unit = bazaar_json["products"][ench]["sell_summary"][0]["pricePerUnit"]
+        if len(bazaar_json["products"][ench]["buy_summary"]) != 0:
+            price_per_unit = bazaar_json["products"][ench]["buy_summary"][0]["pricePerUnit"]
             ench_prices[ench] = price_per_unit
         else:
             continue
@@ -115,7 +116,13 @@ def print_out(lst, bazaar_json):
     potato_count = lst[1]
     ench_data = lst[0]
 
-    hot_potato_sum = potato_count * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
+    # print(potato_count)
+    if potato_count <= 10:
+        hot_potato_sum = potato_count * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
+    else:
+        hot_potato_sum = 10 * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
+        hot_potato_sum = (potato_count - 10) * bazaar_json["products"]["FUMING_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
+
 
     if ench_data != None:
         data_to_bazaar = convert_to_query(ench_data)
@@ -127,6 +134,8 @@ def print_out(lst, bazaar_json):
         for key, value in sorted_enchant_prices:
             print(f"{key : <30}{'->' : ^5}{value : <10,.2f}")
             ench_total += value
+    else:
+        ench_total = 0
     
     print(f"\n{'Enchants Sum: ' : <20}{':' : ^5}{ench_total : <10,.2f}")
     print(f"{'Hot Potato Sum: ' : <20}{':' : ^5}{hot_potato_sum : <10,.2f}")
@@ -138,7 +147,7 @@ def print_out(lst, bazaar_json):
 requestlink = str("https://api.hypixel.net/skyblock/bazaar")
 bazaar_json = requests.get(requestlink).json()
 
-index = 1
+index = 3
 item_data = retrieve_item(index)
 
 print_out(item_data, bazaar_json)
