@@ -1,6 +1,26 @@
-import requests, io, base64
+import requests, io, base64, re
 from mojang import API
 from nbt.nbt import TAG_List, TAG_Compound, NBTFile
+
+#{
+# 'modifier': 'gentle', 
+# 'id': 'ASPECT_OF_THE_END', 
+# 'enchantments': {'knockback': 2}, 
+# 'uuid': '1b58e677-db19-4197-a581-b26248e16f0c', 
+# 'timestamp': '5/31/23 8:11 AM'
+# }
+#
+#{
+# 'hot_potato_count': 10, 
+# 'gems': {'unlocked_slots': ['SAPPHIRE_0', 'SAPPHIRE_1'], 
+# 'SAPPHIRE_0': {'uuid': '9b4bfa8e-820e-4cf4-a7b2-ab386b2584a5', 'quality': 'FLAWLESS'}, 
+# 'SAPPHIRE_1': {'uuid': '5b77a002-259d-409a-bc60-63579d552ae5', 'quality': 'FLAWLESS'}}, 
+# 'modifier': 'heroic', 
+# 'id': 'RUNIC_STAFF', 
+# 'boss_tier': 2, 
+# 'enchantments': {'impaling': 3, 'luck': 6, 'smite': 6, 'looting': 4, 'scavenger': 4, 'ender_slayer': 6, 'experience': 3, 'vampirism': 6, 'cubism': 5, 'execute': 5, 'giant_killer': 6}, 
+# 'uuid': '40660639-93cf-4286-8412-b63f5740f41e', 'timestamp': '6/14/23 7:21 AM'
+# }
 
 
 def decode_nbt(raw):
@@ -55,8 +75,8 @@ def retrieve_item(index):
     nbt_object = decode_nbt(nbt_data)
     native_python_object = unpack_nbt(nbt_object)
 
-    item_ench_data = native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
-    item_potato_count = native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
+    item_ench_data = None if "enchantments" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
+    item_potato_count = 0 if "hot_potato_count" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
     item_name = native_python_object["i"][index]["tag"]["display"]["Name"]
 
     return [item_ench_data, item_potato_count, item_name]
@@ -72,32 +92,46 @@ def convert_to_query(item_data):
             enchants.append(string)
     return enchants
 
-def get_enchant_prices(hypixel_json, data_to_bazaar):
+def get_enchant_prices(bazaar_json, data_to_bazaar):
     """
     Print enchants and their corresponding prioces.
     """
     ench_prices = {}
     for ench in data_to_bazaar:
-        price_per_unit = 0 if len(hypixel_json["products"][ench]["sell_summary"]) == 0 else hypixel_json["products"][ench]["sell_summary"][0]["pricePerUnit"]
-        ench_prices[ench] = price_per_unit
+        if len(bazaar_json["products"][ench]["sell_summary"]) != 0:
+            price_per_unit = bazaar_json["products"][ench]["sell_summary"][0]["pricePerUnit"]
+            ench_prices[ench] = price_per_unit
+        else:
+            continue
     return ench_prices
 
 def print_out(lst, bazaar_json):
     """
     Print out the cost sum of the item nicely.
+
+    Print format: ENCHNATMENT_IMPLAING_3   ->  1,122,503.30
     """
-    name = lst[2]
+    name = re.sub('§\d+', '', lst[2])
     potato_count = lst[1]
     ench_data = lst[0]
 
-    data_to_bazaar = convert_to_query(ench_data)
+    hot_potato_sum = potato_count * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
 
-    total = 0
-    print("Name: ", name)
-    for key, value in get_enchant_prices(bazaar_json, data_to_bazaar).items():
-        print(key, "->", "{:,.2f}".format(value))
-        total += value
-    print("Sum: {:,.2f}".format(total))
+    if ench_data != None:
+        data_to_bazaar = convert_to_query(ench_data)
+        sorted_enchant_prices = sorted(get_enchant_prices(bazaar_json, data_to_bazaar).items(), key=lambda x: x[1], reverse=True)
+
+        ench_total = 0
+        print(f"{'-'*40}\n{name}\n{'-'*40}")
+        
+        for key, value in sorted_enchant_prices:
+            print(f"{key : <30}{'->' : ^5}{value : <10,.2f}")
+            ench_total += value
+    
+    print(f"\n{'Enchants Sum: ' : <15}{':' : ^5}{ench_total : <10,.2f}")
+    print(f"{'Hot Potato Sum: ' : <15}{':' : ^5}{hot_potato_sum : <10,.2f}")
+    print(f"\n{'Total: ' : <15}{':' : ^5}{ench_total + hot_potato_sum: <10,.2f}")
+
 
     return 0
 
@@ -108,3 +142,10 @@ index = 1
 item_data = retrieve_item(index)
 
 print_out(item_data, bazaar_json)
+# username = "Tigropod"
+# player_data = get_json(username)
+# nbt_data = player_data["profiles"][1]["members"]["3e230fba3f5e448bacc7bafd4ef5b44a"]["inv_contents"]["data"]
+
+# nbt_object = decode_nbt(nbt_data)
+# native_python_object = unpack_nbt(nbt_object)
+# print(native_python_object["i"][index]["tag"]["ExtraAttributes"])
