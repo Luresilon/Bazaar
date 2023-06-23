@@ -19,26 +19,33 @@ def get_names(bazaar_json):
     return [product_name for product_name in bazaar_json["products"]]
 
 def read_json(json_file):
-    return json.load(open(json_file))
+    return json.load(open(json_file, 'r', encoding = 'utf-8'))
 
 def recipe_set(product_data):
     recipe = product_data["recipe"]
-    print(recipe)
     materials_set = {
-        material.split(':')[0] for material in recipe.values() if material.split(':')[0] != ''
+        material.split(':')[0] for material in recipe.values() if isinstance(material, str) and material.split(':')[0] != ''
     }
     return materials_set
 
 def is_it_in_yet(product, product_data, bazaar_json):
-    # print("no")
     if 'recipe' in product_data and product in bazaar_json["products"]:
-        # print("yes")
-        recipe = product_data["recipe"]
         materials_set = recipe_set(product_data)
         if all(material in bazaar_json["products"] for material in materials_set):
-            print("Yes")
             return True
     return False
+
+def recipe_cost(product_data, bazaar_json):
+    total = 0
+    for material in product_data['recipe'].values():
+        if material != "":
+            item, quantity = material.split(':')
+            total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
+    return total
+
+def print(product_price, product_Recipe_cost):
+    profit = product_price - product_Recipe_cost
+    
 
 def main():
     hypixel_bazaar_api = "https://api.hypixel.net/skyblock/bazaar"
@@ -48,11 +55,31 @@ def main():
     product_names = get_names(bazaar_json)
     recipes = read_json(hypixel_recipes_json)
     
-    num = 0
     for product, product_data in recipes.items():
         if is_it_in_yet(product, product_data, bazaar_json):
-            print("It is working")
-        else:
-            print("It is not")
+            product_price = float(bazaar_json["products"][product]["buy_summary"][0]["pricePerUnit"])
+            product_recipe_cost = recipe_cost(product_data, bazaar_json)
+
+            print(f"Product: {product_price}")
+            print(f"Product Cost: {product_recipe_cost}")
+            print(f"Profift: {product_price - product_recipe_cost}")
+
+            break
 
 main()
+
+# {
+# 'name': 'Absolute Ender Pearl', 
+# 'recipe': {
+#   'A1': '', 
+#   'A2': 'ENCHANTED_ENDER_PEARL:16', 
+#   'A3': '', 
+#   'B1': 'ENCHANTED_ENDER_PEARL:16', 
+#   'B2': 'ENCHANTED_ENDER_PEARL:16', 
+#   'B3': 'ENCHANTED_ENDER_PEARL:16', 
+#   'C1': '', 
+#   'C2': 'ENCHANTED_ENDER_PEARL:16', 
+#   'C3': ''}, 
+# 'wiki': 'https://wiki.hypixel.net/Absolute_Ender_Pearl', 
+# 'base_rarity': 'RARE'
+# }
