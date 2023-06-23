@@ -52,7 +52,7 @@ def get_json(user):
     api = API()
 
     uuid = api.get_uuid(user)
-    hypixel_api = "e11bb6a7-129a-488c-8d43-cccaea9ec763"
+    hypixel_api = "4057db46-1129-4054-a362-bce3fd866c41"
 
     request_link = str("https://api.hypixel.net/skyblock/profiles?key=" + hypixel_api + "&uuid=" + uuid)
     player_data = requests.get(request_link).json()
