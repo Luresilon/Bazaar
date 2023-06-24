@@ -1,4 +1,4 @@
-import json, requests
+import json, requests, collections
 from time import sleep
 
 def connection_info(bazaar_api):
@@ -32,6 +32,7 @@ def is_it_in_yet(product, product_data, bazaar_json):
     if 'recipe' in product_data and product in bazaar_json["products"]:
         materials_set = recipe_set(product_data)
         if all(material in bazaar_json["products"] for material in materials_set):
+            # print(materials_set)
             return True
     return False
 
@@ -43,7 +44,7 @@ def recipe_cost(product_data, bazaar_json):
             total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
     return total
 
-def print(product_price, product_Recipe_cost):
+def print_output(product_price, product_Recipe_cost):
     profit = product_price - product_Recipe_cost
     
 
@@ -55,16 +56,39 @@ def main():
     product_names = get_names(bazaar_json)
     recipes = read_json(hypixel_recipes_json)
     
+    items = {}
+    num = 0
     for product, product_data in recipes.items():
+        # print(product)
         if is_it_in_yet(product, product_data, bazaar_json):
-            product_price = float(bazaar_json["products"][product]["buy_summary"][0]["pricePerUnit"])
+            num += 1
+            # print(product, "True", num)
+            # print(product)
+            # num += 1
+            # print("n: ", num)
+            # print(bazaar_json["products"][product])
+            # null buy/sell order arrays cause list out of index because of "['buy_summary'][0]" "
+            product_price = 0 if len(bazaar_json["products"][product]["buy_summary"]) == 0 else float(bazaar_json["products"][product]["buy_summary"][0]["pricePerUnit"])
             product_recipe_cost = recipe_cost(product_data, bazaar_json)
 
-            print(f"Product: {product_price}")
-            print(f"Product Cost: {product_recipe_cost}")
-            print(f"Profift: {product_price - product_recipe_cost}")
+            processed_items = {
+                'product_name' : product,
+                'product_profit' : product_price - product_recipe_cost,
+                'product_price' : product_price,
+                'recipe_cost' : product_recipe_cost,
+                'recipe' : product_data['recipe']
+            }
 
-            break
+            items[product] = processed_items
+            # print(len(items))
+            # od = collections.OrderedDict(sorted(items.items()))
+    
+        
+            # print(f"Product: {product_price}")
+            # print(f"Product Cost: {product_recipe_cost}")
+            # print(f"Profift: {product_price - product_recipe_cost}")
+
+    print(items)
 
 main()
 
