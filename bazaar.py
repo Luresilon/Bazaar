@@ -44,8 +44,10 @@ def recipe_cost(product_data, bazaar_json):
             total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
     return total
 
-def print_output(product_price, product_Recipe_cost):
-    profit = product_price - product_Recipe_cost
+def print_output(item, amount):
+
+    print(f"Product Name: {item[0]}\nProduct Profit: {item[1]["product_profit"]}")
+    
     
 
 def main():
@@ -87,8 +89,10 @@ def main():
             # print(f"Product: {product_price}")
             # print(f"Product Cost: {product_recipe_cost}")
             # print(f"Profift: {product_price - product_recipe_cost}")
-
-    print(items)
+    
+    sorted_dict = dict(sorted(items.items(), key=lambda item: item[1]['product_profit'], reverse = True))
+    for i in sorted_dict.items():
+        print(i)
 
 main()
 
