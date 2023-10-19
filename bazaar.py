@@ -4,6 +4,7 @@ from time import sleep
 def connection_info(bazaar_api):
     response = requests.get(bazaar_api)
 
+
     if response.status_code != 200:
         print("There was an error connecting to the server.")
         sleep(1)
