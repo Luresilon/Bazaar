@@ -37,6 +37,8 @@ def unpack_nbt(tag):
     Taken from https://github.com/twoolie/NBT/blob/master/examples/utilities.py
     """
 
+    
+
     if isinstance(tag, TAG_List):
         return [unpack_nbt(i) for i in tag.tags]
     elif isinstance(tag, TAG_Compound):
