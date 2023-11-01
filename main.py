@@ -147,6 +147,7 @@ def print_out(lst, bazaar_json):
     return 0
 
 requestlink = str("https://api.hypixel.net/skyblock/bazaar")
+
 bazaar_json = requests.get(requestlink).json()
 
 index = 3
