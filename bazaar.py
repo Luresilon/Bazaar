@@ -39,6 +39,7 @@ def is_it_in_yet(product, product_data, bazaar_json):
 
 def recipe_cost(product_data, bazaar_json):
     total = 0
+    
     for material in product_data['recipe'].values():
         if material != "":
             item, quantity = material.split(':')
@@ -101,7 +102,7 @@ main()
 # {
 # 'name': 'Absolute Ender Pearl', 
 # 'recipe': {
-    
+
 #   'A1': '', 
 #   'A2': 'ENCHANTED_ENDER_PEARL:16', 
 #   'A3': '', 
