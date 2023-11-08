@@ -138,6 +138,7 @@ def print_out(lst, bazaar_json):
             ench_total += value
     else:
         ench_total = 0
+        
     
     print(f"\n{'Enchants Sum:  ' : <20}{':' : ^5}{ench_total : <10,.2f}")
     print(f"{'Hot Potato Sum: ' : <20}{':' : ^5}{hot_potato_sum : <10,.2f}")

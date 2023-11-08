@@ -51,6 +51,7 @@ def print_output(item, amount):
     print(f"Product Name: {item[0]}\nProduct Profit: {item[1]["product_profit"]}")
     
     
+    
 
 def main():
     hypixel_bazaar_api = "https://api.hypixel.net/skyblock/bazaar"
