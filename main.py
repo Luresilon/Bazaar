@@ -111,9 +111,9 @@ def get_enchant_prices(bazaar_json, data_to_bazaar):
 def print_out(lst, bazaar_json):
     """
     Print out the cost sum of the item nicely.
-    
 
-    Print format: ENCHNATMENT_IMPLAING_3   ->  1,122,503.30
+
+    Print format: ENCHNATMENT_IMPALING_3   ->  1,122,503.30
     """
     name = re.sub('§\d+', '', lst[2])
     potato_count = lst[1]
