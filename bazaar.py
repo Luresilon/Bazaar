@@ -1,118 +1,148 @@
-import json, requests, collections
+import json
+import requests
 from time import sleep
 
-def connection_info(bazaar_api):
-    response = requests.get(bazaar_api)
+class HypixelBazaarAnalyzer:
+    def __init__(self):
+        pass
 
+    def connect_to_server(self, bazaar_api):
+        """
+        Connect to the Hypixel Bazaar API.
 
-    if response.status_code != 200:
-        print("There was an error connecting to the server.")
-        sleep(1)
-        print("Try again later.")
-        exit()
-    else:
-        print("Connecting to the server... ")
-        sleep(1)
-        print("Connections successful.")
-        return response.json()
-    
-def get_names(bazaar_json):
-    return [product_name for product_name in bazaar_json["products"]]
+        Args:
+        - bazaar_api (str): The URL of the Hypixel Bazaar API.
 
-def read_json(json_file):
-    return json.load(open(json_file, 'r', encoding = 'utf-8'))
+        Returns:
+        - dict: The JSON response containing bazaar data.
+        """
+        response = requests.get(bazaar_api)
 
-def recipe_set(product_data):
-    recipe = product_data["recipe"]
-    materials_set = {
-        material.split(':')[0] for material in recipe.values() if isinstance(material, str) and material.split(':')[0] != ''
-    }
-    return materials_set
+        if response.status_code != 200:
+            print("There was an error connecting to the server.")
+            sleep(1)
+            print("Try again later.")
+            exit()
+        else:
+            print("Connecting to the server... ")
+            sleep(1)
+            print("Connections successful.")
+            return response.json()
 
-def is_it_in_yet(product, product_data, bazaar_json):
-    if 'recipe' in product_data and product in bazaar_json["products"]:
-        materials_set = recipe_set(product_data)
-        if all(material in bazaar_json["products"] for material in materials_set):
-            # print(materials_set)
-            return True
-    return False
+    def get_recipe_set(self, product_data):
+        """
+        Extract unique materials from a product's recipe.
 
-def recipe_cost(product_data, bazaar_json):
-    total = 0
-    
-    for material in product_data['recipe'].values():
-        if material != "":
-            item, quantity = material.split(':')
-            total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
-    return total
+        Args:
+        - product_data (dict): Data of the product including recipe information.
 
-def print_output(item, amount):
+        Returns:
+        - set: Set of unique materials in the recipe.
+        """
+        recipe = product_data["recipe"]
+        materials_set = {
+            material.split(':')[0] for material in recipe.values() if isinstance(material, str) and material.split(':')[0] != ''
+        }
+        return materials_set
 
-    print(f"Product Name: {item[0]}\nProduct Profit: {item[1]["product_profit"]}")
-    
-    
-    
+    def is_product_available(self, product, product_data, bazaar_json):
+        """
+        Check if all materials required for a product are available in the bazaar.
+
+        Args:
+        - product (str): Name of the product.
+        - product_data (dict): Data of the product including recipe information.
+        - bazaar_json (dict): JSON data from the bazaar API.
+
+        Returns:
+        - bool: True if the product is available, False otherwise.
+        """
+        if 'recipe' in product_data and product in bazaar_json["products"]:
+            materials_set = self.get_recipe_set(product_data)
+            if all(material in bazaar_json["products"] for material in materials_set):
+                return True
+        return False
+
+    def calculate_recipe_cost(self, product_data, bazaar_json):
+        """
+        Calculate the cost of a product's recipe.
+
+        Args:
+        - product_data (dict): Data of the product including recipe information.
+        - bazaar_json (dict): JSON data from the bazaar API.
+
+        Returns:
+        - float: The total cost of the product's recipe.
+        """
+        total = 0
+        for material in product_data['recipe'].values():
+            if material != "":
+                item, quantity = material.split(':')
+                total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
+        return total
+
+    def print_top_products(self, profit_json, top_n=10):
+        """
+        Print top N products sorted by profit in descending order.
+
+        Args:
+        - profit_json (dict): Dictionary containing product profit information.
+        - top_n (int): Number of top products to print (default is 10).
+        """
+        print(f"\n{'Product Name:':_<30}{'Product Profit:':_<30}{'Recipe Price:':_<30}{'Buy Volume:':_<15}")
+
+        count = 0
+        for entry in profit_json.values():
+            print(f"{entry.get('product_name', '_') :_<30}{entry.get('product_profit', '_') :_<30,.2f}{entry.get('recipe_cost', '_') :_<30,.2f}{entry.get('buy_volume', '_') :_<15}")
+            count += 1
+            if count == top_n:
+                break
+
+    def json_dump(self, current_bazaar_prices: dict, recipes: dict, analyzer) -> dict:
+        """
+        Generate JSON data for products with calculated profits.
+
+        Args:
+        - current_bazaar_prices (dict): JSON data containing current prices in the bazaar. Keys represent product names and values contain information about the products, including their prices.
+        - recipes (dict): JSON data containing recipes for various products. Keys represent product names and values contain recipe information for each product.
+        - analyzer (HypixelBazaarAnalyzer): An instance of the HypixelBazaarAnalyzer class (or any other analyzer class) containing methods to analyze the data.
+
+        Returns:
+        - dict: A dictionary containing product information, including product name, profit, price, recipe cost, and recipe details. The dictionary is sorted based on product profit in descending order.
+        """
+
+        items = {}
+        for product, product_data in recipes.items():
+            if analyzer.is_product_available(product, product_data, current_bazaar_prices):
+                product_price = 0 if len(current_bazaar_prices["products"][product]["buy_summary"]) == 0 else float(current_bazaar_prices["products"][product]["quick_status"]["sellPrice"])
+                product_recipe_cost = analyzer.calculate_recipe_cost(product_data, current_bazaar_prices)
+
+                processed_items = {
+                    'product_name' : product,
+                    'product_profit' : product_price - product_recipe_cost,
+                    'product_price' : product_price,
+                    'recipe_cost' : product_recipe_cost,
+                    'recipe' : product_data['recipe'],
+                    'buy_volume' : current_bazaar_prices["products"][product]["quick_status"]["buyMovingWeek"]
+                    }
+
+                items[product] = processed_items
+
+        sorted_items = dict(sorted(items.items(), key=lambda item: item[1]['product_profit'], reverse=True))
+        return sorted_items
 
 def main():
-    hypixel_bazaar_api = "https://api.hypixel.net/skyblock/bazaar"
-    hypixel_recipes_json = "InternalNameMappings.json"
+    analyzer = HypixelBazaarAnalyzer()
+    HYPIXEL_BAZAAR_API = "https://api.hypixel.net/skyblock/bazaar"
+    HYPIXEL_RECIPES_JSON = "InternalNameMappings.json"
+    top_n = 10
 
-    bazaar_json = connection_info(hypixel_bazaar_api)
-    product_names = get_names(bazaar_json)
-    recipes = read_json(hypixel_recipes_json)
-    
-    items = {}
-    num = 0
-    for product, product_data in recipes.items():
-        # print(product)
-        if is_it_in_yet(product, product_data, bazaar_json):
-            num += 1
-            # print(product, "True", num)
-            # print(product)
-            # num += 1
-            # print("n: ", num)
-            # print(bazaar_json["products"][product])
-            # null buy/sell order arrays cause list out of index because of "['buy_summary'][0]" "
-            product_price = 0 if len(bazaar_json["products"][product]["buy_summary"]) == 0 else float(bazaar_json["products"][product]["buy_summary"][0]["pricePerUnit"])
-            product_recipe_cost = recipe_cost(product_data, bazaar_json)
+    current_bazar_prices = analyzer.connect_to_server(HYPIXEL_BAZAAR_API)
+    recipes = json.load(open(HYPIXEL_RECIPES_JSON, 'r', encoding='utf-8'))
 
-            processed_items = {
-                'product_name' : product,
-                'product_profit' : product_price - product_recipe_cost,
-                'product_price' : product_price,
-                'recipe_cost' : product_recipe_cost,
-                'recipe' : product_data['recipe']
-            }
+    items = analyzer.json_dump(current_bazar_prices, recipes, analyzer)
+    print(f"{'_':_<90}\n[INFO] CURRENT CONFIGURATIONS:\n[INFO] Recipe: INSTA-BUY\n[INFO] Product: NORMAL-SELL\n[INFO] Num of Entries: {top_n}\n{'_':_<90}")
+    analyzer.print_top_products(items, top_n) #can add top_n for how many entries you want (10 by default)
 
-            items[product] = processed_items
-            # print(len(items))
-            # od = collections.OrderedDict(sorted(items.items()))
-    
-        
-            # print(f"Product: {product_price}")
-            # print(f"Product Cost: {product_recipe_cost}")
-            # print(f"Profift: {product_price - product_recipe_cost}")
-    
-    sorted_dict = dict(sorted(items.items(), key=lambda item: item[1]['product_profit'], reverse = True))
-    for i in sorted_dict.items():
-        print(i)
-
-
-main()
-
-# {
-# 'name': 'Absolute Ender Pearl', 
-# 'recipe': {
-
-#   'A1': '', 
-#   'A2': 'ENCHANTED_ENDER_PEARL:16', 
-#   'A3': '', 
-#   'B1': 'ENCHANTED_ENDER_PEARL:16', 
-#   'B2': 'ENCHANTED_ENDER_PEARL:16', 
-#   'B3': 'ENCHANTED_ENDER_PEARL:16', 
-#   'C1': '', 
-#   'C2': 'ENCHANTED_ENDER_PEARL:16', 
-#   'C3': ''}, 
-# 'wiki': 'https://wiki.hypixel.net/Absolute_Ender_Pearl', 
-# 'base_rarity': 'RARE'
-# }
+if __name__ == "__main__":
+    main()

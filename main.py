@@ -54,7 +54,7 @@ def get_json(user):
     api = API()
 
     uuid = api.get_uuid(user)
-    hypixel_api = "4057db46-1129-4054-a362-bce3fd866c41"
+    hypixel_api = "0000" #Insert your Hypixel API here
 
     request_link = str("https://api.hypixel.net/skyblock/profiles?key=" + hypixel_api + "&uuid=" + uuid)
     player_data = requests.get(request_link).json()
@@ -97,7 +97,7 @@ def convert_to_query(item_data):
 
 def get_enchant_prices(bazaar_json, data_to_bazaar):
     """
-    Print enchants and their corresponding prioces.
+    Print enchants and their corresponding prices.
     """
     ench_prices = {}
     for ench in data_to_bazaar:
