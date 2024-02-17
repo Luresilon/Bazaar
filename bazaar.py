@@ -19,14 +19,14 @@ class HypixelBazaarAnalyzer:
         response = requests.get(bazaar_api)
 
         if response.status_code != 200:
-            print("There was an error connecting to the server.")
+            print("[INFO] There was an error connecting to the server.")
             sleep(1)
-            print("Try again later.")
+            print("[INFO] Try again later.")
             exit()
         else:
-            print("Connecting to the server... ")
+            print("[INFO] Connecting to the server... ")
             sleep(1)
-            print("Connections successful.")
+            print("[INFO] Connections successful.")
             return response.json()
 
     def get_recipe_set(self, product_data):
@@ -63,7 +63,7 @@ class HypixelBazaarAnalyzer:
                 return True
         return False
 
-    def calculate_recipe_cost(self, product_data, bazaar_json):
+    def calculate_recipe_cost(self, product_data, bazaar_json, buy_price):
         """
         Calculate the cost of a product's recipe.
 
@@ -78,7 +78,7 @@ class HypixelBazaarAnalyzer:
         for material in product_data['recipe'].values():
             if material != "":
                 item, quantity = material.split(':')
-                total += float(bazaar_json["products"][item]["buy_summary"][0]["pricePerUnit"]) * float(quantity)
+                total += float(bazaar_json["products"][item]["quick_status"][buy_price]) * float(quantity)
         return total
 
     def print_top_products(self, profit_json, top_n=10):
@@ -89,16 +89,16 @@ class HypixelBazaarAnalyzer:
         - profit_json (dict): Dictionary containing product profit information.
         - top_n (int): Number of top products to print (default is 10).
         """
-        print(f"\n{'Product Name:':_<30}{'Product Profit:':_<30}{'Recipe Price:':_<30}{'Buy Volume:':_<15}")
+        print(f"\n{'Product Name:':_<34}{'Product Profit:':_<30}{'Recipe Price:':_<30}{'Product Buy Volume:':_<30}")
 
         count = 0
         for entry in profit_json.values():
-            print(f"{entry.get('product_name', '_') :_<30}{entry.get('product_profit', '_') :_<30,.2f}{entry.get('recipe_cost', '_') :_<30,.2f}{entry.get('buy_volume', '_') :_<15}")
+            print(f"{str(count + 1) + '.':<4}{entry.get('product_name', '_') :_<30}{entry.get('product_profit', '_') :_<30,.2f}{entry.get('recipe_cost', '_') :_<30,.2f}{entry.get('buy_volume', '_') :_<30}")
             count += 1
             if count == top_n:
                 break
 
-    def json_dump(self, current_bazaar_prices: dict, recipes: dict, analyzer) -> dict:
+    def json_dump(self, current_bazaar_prices: dict, recipes: dict, insta_buy: bool, insta_sell: bool, min_buy_volume: int, analyzer) -> dict:
         """
         Generate JSON data for products with calculated profits.
 
@@ -110,12 +110,18 @@ class HypixelBazaarAnalyzer:
         Returns:
         - dict: A dictionary containing product information, including product name, profit, price, recipe cost, and recipe details. The dictionary is sorted based on product profit in descending order.
         """
+        #If we insta sell the product, then use the price of sellPrice, otherwise use buyPrice
+        sell_price = 'sellPrice' if insta_sell else 'buyPrice'
+        buy_price = 'buyPrice' if insta_buy else 'sellPrice'
+
 
         items = {}
         for product, product_data in recipes.items():
             if analyzer.is_product_available(product, product_data, current_bazaar_prices):
-                product_price = 0 if len(current_bazaar_prices["products"][product]["buy_summary"]) == 0 else float(current_bazaar_prices["products"][product]["quick_status"]["sellPrice"])
-                product_recipe_cost = analyzer.calculate_recipe_cost(product_data, current_bazaar_prices)
+                buy_volume = current_bazaar_prices["products"][product]["quick_status"]["buyVolume"]
+                if(buy_volume < min_buy_volume): continue
+                product_price = 0 if len(current_bazaar_prices["products"][product]["buy_summary"]) == 0 else float(current_bazaar_prices["products"][product]["quick_status"][sell_price])
+                product_recipe_cost = analyzer.calculate_recipe_cost(product_data, current_bazaar_prices, buy_price)
 
                 processed_items = {
                     'product_name' : product,
@@ -123,7 +129,7 @@ class HypixelBazaarAnalyzer:
                     'product_price' : product_price,
                     'recipe_cost' : product_recipe_cost,
                     'recipe' : product_data['recipe'],
-                    'buy_volume' : current_bazaar_prices["products"][product]["quick_status"]["buyMovingWeek"]
+                    'buy_volume' : buy_volume
                     }
 
                 items[product] = processed_items
@@ -135,14 +141,29 @@ def main():
     analyzer = HypixelBazaarAnalyzer()
     HYPIXEL_BAZAAR_API = "https://api.hypixel.net/skyblock/bazaar"
     HYPIXEL_RECIPES_JSON = "InternalNameMappings.json"
-    top_n = 10
 
     current_bazar_prices = analyzer.connect_to_server(HYPIXEL_BAZAAR_API)
     recipes = json.load(open(HYPIXEL_RECIPES_JSON, 'r', encoding='utf-8'))
 
-    items = analyzer.json_dump(current_bazar_prices, recipes, analyzer)
-    print(f"{'_':_<90}\n[INFO] CURRENT CONFIGURATIONS:\n[INFO] Recipe: INSTA-BUY\n[INFO] Product: NORMAL-SELL\n[INFO] Num of Entries: {top_n}\n{'_':_<90}")
-    analyzer.print_top_products(items, top_n) #can add top_n for how many entries you want (10 by default)
+    #Change parameters here:
+    #_____________________________________________#
+    num_of_products = 10
+    insta_buy = True
+    insta_sell = False
+    min_buy_volume = 0
+    #_____________________________________________#
+
+    
+    print("_" * 90)
+    print("[INFO] CURRENT CONFIGURATIONS:")
+    print(f"[INFO] Recipe: {'INSTA-BUY' if insta_buy == True else 'NORM-BUY'}")
+    print(f"[INFO] Product: {'INSTA-SELL' if insta_sell == True else 'NORM-SELL'}")
+    print(f"[INFO] Num of Entries: {num_of_products}")
+    print(f"[INFO] Minimum Buy Volume: {min_buy_volume}")
+    print("_" * 90)
+
+    items = analyzer.json_dump(current_bazar_prices, recipes, insta_buy, insta_sell, min_buy_volume, analyzer)
+    analyzer.print_top_products(items, num_of_products) #can add top_n for how many entries you want (10 by default)
 
 if __name__ == "__main__":
     main()
