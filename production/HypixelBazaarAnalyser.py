@@ -2,7 +2,7 @@ import json
 import requests
 from time import sleep
 
-class HypixelBazaarAnalyzer:
+class HypixelBazaarAnalyser:
     def __init__(self):
         pass
 
@@ -138,7 +138,7 @@ class HypixelBazaarAnalyzer:
         return sorted_items
 
 def main():
-    analyzer = HypixelBazaarAnalyzer()
+    analyzer = HypixelBazaarAnalyser()
     HYPIXEL_BAZAAR_API = "https://api.hypixel.net/skyblock/bazaar"
     HYPIXEL_RECIPES_JSON = "InternalNameMappings.json"
 
