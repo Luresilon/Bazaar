@@ -6,7 +6,10 @@ class HypixelBazaarAnalyser:
     def __init__(self):
         pass
 
-    def connect_to_server(self, bazaar_api):
+    # def print_test(self):
+    #     print("It's working.")
+
+    def connect_to_server(self, bazaar_api: str) -> dict:
         """
         Connect to the Hypixel Bazaar API.
 
@@ -29,7 +32,7 @@ class HypixelBazaarAnalyser:
             print("[INFO] Connections successful.")
             return response.json()
 
-    def get_recipe_set(self, product_data):
+    def get_recipe_set(self, product_data: dict) -> dict:
         """
         Extract unique materials from a product's recipe.
 
@@ -43,9 +46,11 @@ class HypixelBazaarAnalyser:
         materials_set = {
             material.split(':')[0] for material in recipe.values() if isinstance(material, str) and material.split(':')[0] != ''
         }
+        print(recipe)
+        print(materials_set)
         return materials_set
 
-    def is_product_available(self, product, product_data, bazaar_json):
+    def is_product_available(self, product: str, product_data: dict, bazaar_json: dict) -> dict:
         """
         Check if all materials required for a product are available in the bazaar.
 
@@ -63,13 +68,14 @@ class HypixelBazaarAnalyser:
                 return True
         return False
 
-    def calculate_recipe_cost(self, product_data, bazaar_json, buy_price):
+    def calculate_recipe_cost(self, product_data: dict, bazaar_json: dict, buy_price: str) -> float:
         """
         Calculate the cost of a product's recipe.
 
         Args:
         - product_data (dict): Data of the product including recipe information.
         - bazaar_json (dict): JSON data from the bazaar API.
+        - buy_price (str): Price of a material within the recipe.
 
         Returns:
         - float: The total cost of the product's recipe.
@@ -81,7 +87,7 @@ class HypixelBazaarAnalyser:
                 total += float(bazaar_json["products"][item]["quick_status"][buy_price]) * float(quantity)
         return total
 
-    def print_top_products(self, profit_json, top_n=10):
+    def print_top_products(self, profit_json: dict, top_n: int=10):
         """
         Print top N products sorted by profit in descending order.
 
@@ -140,7 +146,7 @@ class HypixelBazaarAnalyser:
 def main():
     analyzer = HypixelBazaarAnalyser()
     HYPIXEL_BAZAAR_API = "https://api.hypixel.net/skyblock/bazaar"
-    HYPIXEL_RECIPES_JSON = "InternalNameMappings.json"
+    HYPIXEL_RECIPES_JSON = "src\db\InternalNameMappings.json"
 
     current_bazar_prices = analyzer.connect_to_server(HYPIXEL_BAZAAR_API)
     recipes = json.load(open(HYPIXEL_RECIPES_JSON, 'r', encoding='utf-8'))

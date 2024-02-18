@@ -7,14 +7,17 @@ import base64
 
 
 class HypixelBazaarData:
-    def __init__(self):
-        self.hypixel_api_key = "0000"  # Insert your Hypixel API key here
-        self.bazaar_api_url = "https://api.hypixel.net/skyblock/bazaar"
-        self.hypixel_profile_url = "https://api.hypixel.net/skyblock/profiles"
+    def __init__(self, hypixel_api_key: str):
+        BAZAAR_API_URL = "https://api.hypixel.net/skyblock/bazaar"
+        HYPIXEL_PROFILE_URL = "https://api.hypixel.net/skyblock/profiles"
+
+        self.hypixel_api_key = hypixel_api_key
+        self.bazaar_api_url = BAZAAR_API_URL
+        self.hypixel_profile_url = HYPIXEL_PROFILE_URL
+
         self.api = API()
 
     def get_player_data(self, username: str) -> dict:
-
         """
         Retrieve player data from the Hypixel API.
 
@@ -31,7 +34,6 @@ class HypixelBazaarData:
         return player_data
 
     def decode_nbt(self, raw: str) -> NBTFile:
-        
         """
         Decode a gzipped and base64 decoded string to an NBT object.
 
@@ -44,7 +46,6 @@ class HypixelBazaarData:
         return NBTFile(fileobj=BytesIO(base64.b64decode(raw)))
 
     def unpack_nbt(self, tag: NBTFile) -> dict:
-        
         """
         Unpack an NBT tag into a native Python data structure.
 
@@ -62,8 +63,7 @@ class HypixelBazaarData:
         else:
             return tag.value
 
-    def retrieve_item_data(self, username: str, index: int) -> dict:
-        
+    def retrieve_item_data(self, username: str, index: int = 0) -> dict:
         """
         Retrieve data for an item from the player's inventory.
 
@@ -80,8 +80,6 @@ class HypixelBazaarData:
         nbt_data = player_data["profiles"][1]["members"]["3e230fba3f5e448bacc7bafd4ef5b44a"]["inv_contents"]["data"]
         nbt_object = self.decode_nbt(nbt_data)
         native_python_object = self.unpack_nbt(nbt_object)
-        print(native_python_object)
-
         item_ench_data = None if "enchantments" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
         item_potato_count = 0 if "hot_potato_count" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
         item_name = native_python_object["i"][index]["tag"]["display"]["Name"]
@@ -149,19 +147,27 @@ class HypixelBazaarData:
 
         total_enchantment_cost = sum(enchantment_prices.values())
 
-        print(f"{'-'*40}\n{name}\n{'-'*40}")
+        print(f"{'-'*90}\n{name}\n{'-'*90}")
         for enchantment, price in sorted_enchantment_prices:
-            print(f"{enchantment:<30}{'->':^5}{price:<10,.2f}")
+            print(f"{enchantment:<32}{'->':^5}{price:<10,.2f}")
 
-        print(f"\n{'Enchantment Cost(s):':<20}{'Total:':^5}{total_enchantment_cost:<10,.2f}")
-        print(f"{'Hot Potato(s) Cost:':<20}{'Total:':^5}{hot_potato_price:<10,.2f}")
-        print(f"\n{'Grand Total:':<20}{'Total:':^5}{total_enchantment_cost + hot_potato_price:<10,.2f}")
+        print(f"\n{'Enchantment Cost(s):':_<30}{'Total: ':^5}{total_enchantment_cost:<10,.2f}")
+        print(f"{'Hot Potato(s) Cost:':_<30}{'Total: ':^5}{hot_potato_price:<10,.2f}")
+        print(f"\n{'Grand Price:':_<30}{'Total: ':^5}{total_enchantment_cost + hot_potato_price:<10,.2f}")
 
 
 def main():
-    bazaar_data = HypixelBazaarData()
+
+    #Change parameters here:
+    #_____________________________________________#
+    username = "Tigropod"
+    hypixel_developer_key = "8af09425-824c-4e2d-a9b9-3ab2ef136453"
+    item_index = 0 #First slot is index '0'
+    #_____________________________________________#
+
+    bazaar_data = HypixelBazaarData(hypixel_developer_key)
     bazaar_json = requests.get(bazaar_data.bazaar_api_url).json()
-    item_data = bazaar_data.retrieve_item_data("Tigropod", 0)
+    item_data = bazaar_data.retrieve_item_data(username, item_index)
     bazaar_data.print_item_costs(item_data, bazaar_json)
 
 
