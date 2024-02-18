@@ -46,8 +46,6 @@ class HypixelBazaarAnalyser:
         materials_set = {
             material.split(':')[0] for material in recipe.values() if isinstance(material, str) and material.split(':')[0] != ''
         }
-        print(recipe)
-        print(materials_set)
         return materials_set
 
     def is_product_available(self, product: str, product_data: dict, bazaar_json: dict) -> dict:
@@ -146,7 +144,7 @@ class HypixelBazaarAnalyser:
 def main():
     analyzer = HypixelBazaarAnalyser()
     HYPIXEL_BAZAAR_API = "https://api.hypixel.net/skyblock/bazaar"
-    HYPIXEL_RECIPES_JSON = "src\db\InternalNameMappings.json"
+    HYPIXEL_RECIPES_JSON = "db\InternalNameMappings.json"
 
     current_bazar_prices = analyzer.connect_to_server(HYPIXEL_BAZAAR_API)
     recipes = json.load(open(HYPIXEL_RECIPES_JSON, 'r', encoding='utf-8'))
