@@ -11,10 +11,8 @@
 //          {"amount":2289,"pricePerUnit":142.1,"orders":1},
 //          {"amount":38290,"pricePerUnit":140.8,"orders":1},
 //          {"amount":71634,"pricePerUnit":140.7,"orders":1}],
-         
 //          "buy_summary":[
 //             {"amount":75,"pricePerUnit":179.8,"orders":1},
 //             {"amount":449369,"pricePerUnit":179.9,"orders":8},
 //             {"amount":71680,"pricePerUnit":184.8,"orders":2}],
-
 //         "quick_status":{"productId":"ENCHANTED_ENDER_PEARL","sellPrice":152.34191096634095,"sellVolume":1172399,"sellMovingWeek":18894273,"sellOrders":75,"buyPrice":179.9,"buyVolume":1598585,"buyMovingWeek":8170421,"buyOrders":223}},

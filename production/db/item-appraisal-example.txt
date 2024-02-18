@@ -1,0 +1,19 @@
+#{
+# 'modifier': 'gentle', 
+# 'id': 'ASPECT_OF_THE_END', 
+# 'enchantments': {'knockback': 2}, 
+# 'uuid': '1b58e677-db19-4197-a581-b26248e16f0c', 
+# 'timestamp': '5/31/23 8:11 AM'
+# }
+#
+#{
+# 'hot_potato_count': 10, 
+# 'gems': {'unlocked_slots': ['SAPPHIRE_0', 'SAPPHIRE_1'], 
+# 'SAPPHIRE_0': {'uuid': '9b4bfa8e-820e-4cf4-a7b2-ab386b2584a5', 'quality': 'FLAWLESS'}, 
+# 'SAPPHIRE_1': {'uuid': '5b77a002-259d-409a-bc60-63579d552ae5', 'quality': 'FLAWLESS'}}, 
+# 'modifier': 'heroic', 
+# 'id': 'RUNIC_STAFF', 
+# 'boss_tier': 2, 
+# 'enchantments': {'impaling': 3, 'luck': 6, 'smite': 6, 'looting': 4, 'scavenger': 4, 'ender_slayer': 6, 'experience': 3, 'vampirism': 6, 'cubism': 5, 'execute': 5, 'giant_killer': 6}, 
+# 'uuid': '40660639-93cf-4286-8412-b63f5740f41e', 'timestamp': '6/14/23 7:21 AM'
+# }
