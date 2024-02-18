@@ -1,166 +1,169 @@
-import requests, io, base64, re
+import requests
+import re
 from mojang import API
-from nbt.nbt import TAG_List, TAG_Compound, NBTFile
-
-#{
-# 'modifier': 'gentle', 
-# 'id': 'ASPECT_OF_THE_END', 
-# 'enchantments': {'knockback': 2}, 
-# 'uuid': '1b58e677-db19-4197-a581-b26248e16f0c', 
-# 'timestamp': '5/31/23 8:11 AM'
-# }
-#
-#{
-# 'hot_potato_count': 10, 
-# 'gems': {'unlocked_slots': ['SAPPHIRE_0', 'SAPPHIRE_1'], 
-# 'SAPPHIRE_0': {'uuid': '9b4bfa8e-820e-4cf4-a7b2-ab386b2584a5', 'quality': 'FLAWLESS'}, 
-# 'SAPPHIRE_1': {'uuid': '5b77a002-259d-409a-bc60-63579d552ae5', 'quality': 'FLAWLESS'}}, 
-# 'modifier': 'heroic', 
-# 'id': 'RUNIC_STAFF', 
-# 'boss_tier': 2, 
-# 'enchantments': {'impaling': 3, 'luck': 6, 'smite': 6, 'looting': 4, 'scavenger': 4, 'ender_slayer': 6, 'experience': 3, 'vampirism': 6, 'cubism': 5, 'execute': 5, 'giant_killer': 6}, 
-# 'uuid': '40660639-93cf-4286-8412-b63f5740f41e', 'timestamp': '6/14/23 7:21 AM'
-# }
+from nbt.nbt import NBTFile, TAG_List, TAG_Compound
+from io import BytesIO
+import base64
 
 
-def decode_nbt(raw):
-    """
-    Decode a gziped and base64 decoded string to an NBT object
-    """
+class HypixelBazaarData:
+    def __init__(self):
+        self.hypixel_api_key = "0000"  # Insert your Hypixel API key here
+        self.bazaar_api_url = "https://api.hypixel.net/skyblock/bazaar"
+        self.hypixel_profile_url = "https://api.hypixel.net/skyblock/profiles"
+        self.api = API()
 
-    return NBTFile(fileobj=io.BytesIO(base64.b64decode(raw)))
+    def get_player_data(self, username: str) -> dict:
 
+        """
+        Retrieve player data from the Hypixel API.
 
-def unpack_nbt(tag):
-    """
-    Unpack an NBT tag into a native Python data structure.
-    Taken from https://github.com/twoolie/NBT/blob/master/examples/utilities.py
-    """
+        Args:
+            username (str): The Minecraft username of the player.
 
-    
+        Returns:
+            dict: The player's data.
+        """
 
-    if isinstance(tag, TAG_List):
-        return [unpack_nbt(i) for i in tag.tags]
-    elif isinstance(tag, TAG_Compound):
-        return dict((i.name, unpack_nbt(i)) for i in tag.tags)
-    else:
-        return tag.value
+        uuid = self.api.get_uuid(username)
+        request_link = f"{self.hypixel_profile_url}?key={self.hypixel_api_key}&uuid={uuid}"
+        player_data = requests.get(request_link).json()
+        return player_data
 
-def get_json(user):
-    """
-    Retrieve Json format data of a player.
-    """
-
-    api = API()
-
-    uuid = api.get_uuid(user)
-    hypixel_api = "0000" #Insert your Hypixel API here
-
-    request_link = str("https://api.hypixel.net/skyblock/profiles?key=" + hypixel_api + "&uuid=" + uuid)
-    player_data = requests.get(request_link).json()
-
-    return player_data
-
-def retrieve_item(index):
-
-    """
-    Open API link and retrieve enchantments of the item on the first slot of the
-    utility bar.
-
-    TO DO: Add Optional for enchants or other
-    """
-    username = "Tigropod"
-    player_data = get_json(username)
-
-    nbt_data = player_data["profiles"][1]["members"]["3e230fba3f5e448bacc7bafd4ef5b44a"]["inv_contents"]["data"]
-
-    nbt_object = decode_nbt(nbt_data)
-    native_python_object = unpack_nbt(nbt_object)
-
-    item_ench_data = None if "enchantments" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
-    item_potato_count = 0 if "hot_potato_count" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
-    item_name = native_python_object["i"][index]["tag"]["display"]["Name"]
-
-    return [item_ench_data, item_potato_count, item_name]
-
-def convert_to_query(item_data):
-    """
-    Convert json format into list of enchantments for bazaar query
-    """
-    enchants = []
-    print(item_data.items())
-    for key, value in item_data.items():
-        if key != "telekinesis":
-            string = "ENCHANTMENT_" + key.upper() + "_" + str(value)
-            enchants.append(string)
-    return enchants
-
-def get_enchant_prices(bazaar_json, data_to_bazaar):
-    """
-    Print enchants and their corresponding prices.
-    """
-    ench_prices = {}
-    for ench in data_to_bazaar:
-        if len(bazaar_json["products"][ench]["buy_summary"]) != 0:
-            price_per_unit = bazaar_json["products"][ench]["buy_summary"][0]["pricePerUnit"]
-            ench_prices[ench] = price_per_unit
-        else:
-            continue
-    return ench_prices
-
-def print_out(lst, bazaar_json):
-    """
-    Print out the cost sum of the item nicely.
-
-
-    Print format: ENCHNATMENT_IMPALING_3   ->  1,122,503.30
-    """
-    name = re.sub('§\d+', '', lst[2])
-    potato_count = lst[1]
-    ench_data = lst[0]
-
-    # print(potato_count)
-    if potato_count <= 10:
-        hot_potato_sum = potato_count * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
-    else:
-        hot_potato_sum = 10 * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
-        hot_potato_sum = (potato_count - 10) * bazaar_json["products"]["FUMING_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
-
-
-    if ench_data != None:
-        data_to_bazaar = convert_to_query(ench_data)
-        sorted_enchant_prices = sorted(get_enchant_prices(bazaar_json, data_to_bazaar).items(), key=lambda x: x[1], reverse=True)
-
-        ench_total = 0
-        print(f"{'-'*40}\n{name}\n{'-'*40}")
+    def decode_nbt(self, raw: str) -> NBTFile:
         
-        for key, value in sorted_enchant_prices:
-            print(f"{key : <30}{'->' : ^5}{value : <10,.2f}")
-            ench_total += value
-    else:
-        ench_total = 0
+        """
+        Decode a gzipped and base64 decoded string to an NBT object.
 
-    
-    
-    print(f"\n{'Enchants Sum:  ' : <20}{':' : ^5}{ench_total : <10,.2f}")
-    print(f"{'Hot Potato Sum: ' : <20}{':' : ^5}{hot_potato_sum : <10,.2f}")
-    print(f"\n{'Total: ' : <20}{':' : ^5}{ench_total + hot_potato_sum: <10,.2f}")
+        Args:
+            raw (str): The raw NBT data.
+
+        Returns:
+            NBTFile: The NBT object.
+        """
+        return NBTFile(fileobj=BytesIO(base64.b64decode(raw)))
+
+    def unpack_nbt(self, tag: NBTFile) -> dict:
+        
+        """
+        Unpack an NBT tag into a native Python data structure.
+
+        Args:
+            tag (NBT tag): The NBT tag.
+
+        Returns:
+            dict: The unpacked data structure. (can be any)
+        """
+
+        if isinstance(tag, TAG_List):
+            return [self.unpack_nbt(i) for i in tag.tags]
+        elif isinstance(tag, TAG_Compound):
+            return {i.name: self.unpack_nbt(i) for i in tag.tags}
+        else:
+            return tag.value
+
+    def retrieve_item_data(self, username: str, index: int) -> dict:
+        
+        """
+        Retrieve data for an item from the player's inventory.
+
+        Args:
+            username (str): The Minecraft username of the player.
+            index (int): The index of the item in the player's inventory.
+
+        Returns:
+            dict: The item data.
+        """
+
+        player_data = self.get_player_data(username)
+
+        nbt_data = player_data["profiles"][1]["members"]["3e230fba3f5e448bacc7bafd4ef5b44a"]["inv_contents"]["data"]
+        nbt_object = self.decode_nbt(nbt_data)
+        native_python_object = self.unpack_nbt(nbt_object)
+        print(native_python_object)
+
+        item_ench_data = None if "enchantments" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["enchantments"]
+        item_potato_count = 0 if "hot_potato_count" not in native_python_object["i"][index]["tag"]["ExtraAttributes"] else native_python_object["i"][index]["tag"]["ExtraAttributes"]["hot_potato_count"]
+        item_name = native_python_object["i"][index]["tag"]["display"]["Name"]
+
+        return [item_ench_data, item_potato_count, item_name]
+
+    def convert_to_enchant_query(self, item_data: dict) -> list:
+        """
+        Convert item enchantments to a list of enchantment queries for the bazaar.
+        Note: Avoid untrackable legacy enchantment 'Telekenesis'
+
+        Args:
+            item_data (dict): The item data containing enchantments.
+
+        Returns:
+            list: A list of enchantment queries.
+        """
+
+        enchantments = []
+        for key, value in item_data.items():
+            if key != "telekinesis":
+                enchantment_query = f"ENCHANTMENT_{key.upper()}_{value}"
+                enchantments.append(enchantment_query)
+        return enchantments
+
+    def get_enchantment_prices(self, bazaar_json: dict, enchantment_queries: list) -> dict:
+        """
+        Retrieve prices for enchantments from the bazaar data.
+
+        Args:
+            bazaar_json (dict): The bazaar data.
+            enchantment_queries (list): A list of enchantment queries.
+
+        Returns:
+            dict: A dictionary containing enchantment prices.
+        """
+
+        enchantment_prices = {}
+        for query in enchantment_queries:
+            if query in bazaar_json["products"]:
+                buy_summary = bazaar_json["products"][query].get("buy_summary", [])
+                if buy_summary:
+                    price_per_unit = buy_summary[0]["pricePerUnit"]
+                    enchantment_prices[query] = price_per_unit
+        return enchantment_prices
+
+    def print_item_costs(self, item_data: dict, bazaar_json: dict):
+        """
+        Print the cost of an item including enchantments and hot potato books.
+
+        Args:
+            item_data (dict): The item data.
+            bazaar_json (dict): The bazaar data.
+        """
+
+        name = re.sub('§\d+', '', item_data[2])
+        hot_potato_count = item_data[1]
+        enchantment_data = item_data[0]
+
+        hot_potato_price = hot_potato_count * bazaar_json["products"]["HOT_POTATO_BOOK"]["sell_summary"][0]["pricePerUnit"]
+
+        enchantment_queries = self.convert_to_enchant_query(enchantment_data)
+        enchantment_prices = self.get_enchantment_prices(bazaar_json, enchantment_queries)
+        sorted_enchantment_prices = sorted(enchantment_prices.items(), key=lambda x: x[1], reverse=True)
+
+        total_enchantment_cost = sum(enchantment_prices.values())
+
+        print(f"{'-'*40}\n{name}\n{'-'*40}")
+        for enchantment, price in sorted_enchantment_prices:
+            print(f"{enchantment:<30}{'->':^5}{price:<10,.2f}")
+
+        print(f"\n{'Enchantment Cost(s):':<20}{'Total:':^5}{total_enchantment_cost:<10,.2f}")
+        print(f"{'Hot Potato(s) Cost:':<20}{'Total:':^5}{hot_potato_price:<10,.2f}")
+        print(f"\n{'Grand Total:':<20}{'Total:':^5}{total_enchantment_cost + hot_potato_price:<10,.2f}")
 
 
-    return 0
+def main():
+    bazaar_data = HypixelBazaarData()
+    bazaar_json = requests.get(bazaar_data.bazaar_api_url).json()
+    item_data = bazaar_data.retrieve_item_data("Tigropod", 0)
+    bazaar_data.print_item_costs(item_data, bazaar_json)
 
-requestlink = str("https://api.hypixel.net/skyblock/bazaar")
 
-bazaar_json = requests.get(requestlink).json()
-
-index = 3
-item_data = retrieve_item(index)
-
-print_out(item_data, bazaar_json)
-# username = "Tigropod"
-# player_data = get_json(username)
-# nbt_data = player_data["profiles"][1]["members"]["3e230fba3f5e448bacc7bafd4ef5b44a"]["inv_contents"]["data"]
-
-# nbt_object = decode_nbt(nbt_data)
-# native_python_object = unpack_nbt(nbt_object)
-# print(native_python_object["i"][index]["tag"]["ExtraAttributes"])
+if __name__ == "__main__":
+    main()
