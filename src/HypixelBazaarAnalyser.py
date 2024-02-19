@@ -6,9 +6,6 @@ class HypixelBazaarAnalyser:
     def __init__(self):
         pass
 
-    # def print_test(self):
-    #     print("It's working.")
-
     def connect_to_server(self, bazaar_api: str) -> dict:
         """
         Connect to the Hypixel Bazaar API.
@@ -93,11 +90,11 @@ class HypixelBazaarAnalyser:
         - profit_json (dict): Dictionary containing product profit information.
         - top_n (int): Number of top products to print (default is 10).
         """
-        print(f"\n{'Product Name:':_<34}{'Product Profit:':_<30}{'Recipe Price:':_<30}{'Product Buy Volume:':_<30}")
+        print(f"\n{'Product Name:':_<34}{'Product Profit:':_<30}{'Recipe Price:':_<30}{'Product Buy Volume:':_<26}")
 
         count = 0
         for entry in profit_json.values():
-            print(f"{str(count + 1) + '.':<4}{entry.get('product_name', '_') :_<30}{entry.get('product_profit', '_') :_<30,.2f}{entry.get('recipe_cost', '_') :_<30,.2f}{entry.get('buy_volume', '_') :_<30}")
+            print(f"{str(count + 1) + '.':<4}{entry.get('product_name', '_') :_<30}{entry.get('product_profit', '_') :_<30,.2f}{entry.get('recipe_cost', '_') :_<30,.2f}{entry.get('buy_volume', '_') :_<26}")
             count += 1
             if count == top_n:
                 break
@@ -156,18 +153,17 @@ def main():
     insta_sell = False
     min_buy_volume = 0
     #_____________________________________________#
-
     
-    print("_" * 90)
+    print("_" * 120)
     print("[INFO] CURRENT CONFIGURATIONS:")
     print(f"[INFO] Recipe: {'INSTA-BUY' if insta_buy == True else 'NORM-BUY'}")
     print(f"[INFO] Product: {'INSTA-SELL' if insta_sell == True else 'NORM-SELL'}")
     print(f"[INFO] Num of Entries: {num_of_products}")
     print(f"[INFO] Minimum Buy Volume: {min_buy_volume}")
-    print("_" * 90)
+    print("_" * 120)
 
     items = analyzer.json_dump(current_bazar_prices, recipes, insta_buy, insta_sell, min_buy_volume, analyzer)
-    analyzer.print_top_products(items, num_of_products) #can add top_n for how many entries you want (10 by default)
+    analyzer.print_top_products(items, num_of_products) #can add num_of_products for how many entries you want (10 by default)
 
 if __name__ == "__main__":
     main()
