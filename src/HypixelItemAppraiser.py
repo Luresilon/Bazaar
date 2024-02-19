@@ -6,7 +6,7 @@ from io import BytesIO
 import base64
 
 
-class HypixelBazaarData:
+class HypixelItemAppraiser:
     def __init__(self, hypixel_api_key: str):
         BAZAAR_API_URL = "https://api.hypixel.net/skyblock/bazaar"
         HYPIXEL_PROFILE_URL = "https://api.hypixel.net/skyblock/profiles"
@@ -161,11 +161,11 @@ def main():
     #Change parameters here:
     #_____________________________________________#
     username = "Tigropod"
-    hypixel_developer_key = "8af09425-824c-4e2d-a9b9-3ab2ef136453"
+    hypixel_developer_key = "0000"
     item_index = 0 #First slot is index '0'
     #_____________________________________________#
 
-    bazaar_data = HypixelBazaarData(hypixel_developer_key)
+    bazaar_data = HypixelItemAppraiser(hypixel_developer_key)
     bazaar_json = requests.get(bazaar_data.bazaar_api_url).json()
     item_data = bazaar_data.retrieve_item_data(username, item_index)
     bazaar_data.print_item_costs(item_data, bazaar_json)
