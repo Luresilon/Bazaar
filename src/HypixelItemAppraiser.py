@@ -161,7 +161,7 @@ def main():
     #Change parameters here:
     #_____________________________________________#
     username = "Tigropod"
-    hypixel_developer_key = "8c796c84-ff50-407a-a2ed-1798e93b2d5c"
+    hypixel_developer_key = "8000"
     item_index = 1 #First slot is index '0'
     #_____________________________________________#
 
