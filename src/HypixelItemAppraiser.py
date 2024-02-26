@@ -1,7 +1,10 @@
 import requests
 import re
+import requests
+import json
 from mojang import API
 from nbt.nbt import NBTFile, TAG_List, TAG_Compound
+from time import sleep
 from io import BytesIO
 import base64
 
@@ -16,6 +19,29 @@ class HypixelItemAppraiser:
         self.hypixel_profile_url = HYPIXEL_PROFILE_URL
 
         self.api = API()
+
+    def validate_inputs(self, username:str) -> bool:
+        """
+        Validate user inputs.
+
+        Args:
+            username (str): The Minecraft username of the player.
+
+        Returns:
+            bool: True if inputs return success.
+        """
+
+        req_link = "https://api.hypixel.net/player?key=" + self.hypixel_api_key + "&name=" + username
+        response = requests.get(req_link)        
+
+        if response.status_code == 200 or response.status_code == 429:
+            print(f"[INFO] Player and API key validated.")
+            sleep(1)
+        else:
+            print(f"[INFO] Error: {response.json()['cause']}")
+            exit()
+
+        return True
 
     def get_player_data(self, username: str) -> dict:
         """
@@ -161,11 +187,13 @@ def main():
     #Change parameters here:
     #_____________________________________________#
     username = "Tigropod"
-    hypixel_developer_key = "8000"
+    hypixel_developer_key = "34e09c90-f634-40b4-9bcd-b8f87cf01ad3"
     item_index = 1 #First slot is index '0'
     #_____________________________________________#
-
     bazaar_data = HypixelItemAppraiser(hypixel_developer_key)
+
+    bazaar_data.validate_inputs(username) #check if inputs exist in the Hypixel DB
+
     bazaar_json = requests.get(bazaar_data.bazaar_api_url).json()
     item_data = bazaar_data.retrieve_item_data(username, item_index)
     bazaar_data.print_item_costs(item_data, bazaar_json)
