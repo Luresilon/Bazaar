@@ -2,4 +2,4 @@ mojang==1.1.0
 NBT==1.5.1
 pytest==8.0.1
 pytest==7.3.1
-Requests==2.31.0
+Requests==2.32.0
